@@ -1,0 +1,895 @@
+//Main Menü:
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../logic/game_provider.dart';
+import 'game_screen.dart';
+
+class MainMenuScreen extends StatefulWidget {
+  const MainMenuScreen({super.key});
+
+  @override
+  _MainMenuScreenState createState() => _MainMenuScreenState();
+}
+
+class _MainMenuScreenState extends State<MainMenuScreen> {
+  bool isSettingsOpen = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          // ZENGİN ARKA PLAN
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                colors: [Colors.lightBlue.shade300, Colors.green.shade300, Colors.green.shade600],
+              )
+            ),
+            child: Stack(
+              children: [
+                Positioned(top: -50, right: -50, child: Icon(Icons.sunny, size: 150, color: Colors.yellow.withOpacity(0.4))),
+                Positioned(bottom: 50, left: 20, child: Icon(Icons.grass, size: 80, color: Colors.green.shade800.withOpacity(0.3))),
+                Positioned(bottom: 20, right: 50, child: Icon(Icons.local_florist, size: 60, color: Colors.pink.withOpacity(0.3))),
+                Center(child: Opacity(opacity: 0.05, child: Icon(Icons.agriculture_rounded, size: 400, color: Colors.white))),
+              ],
+            ),
+          ),
+          
+          Center(
+            child: Consumer<GameProvider>(
+              builder: (context, game, child) {
+                if (isSettingsOpen) return _buildSettings(context, game);
+                return _buildMenu(context, game);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenu(BuildContext context, GameProvider game) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+          decoration: BoxDecoration(
+            color: Colors.green.shade800,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.yellowAccent, width: 4),
+            boxShadow: [BoxShadow(color: Colors.black38, blurRadius: 15, offset: Offset(0, 8))]
+          ),
+          child: Text(
+            game.t('title'),
+            style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 2, shadows: [Shadow(color: Colors.black, blurRadius: 5)]),
+          ),
+        ),
+        SizedBox(height: 80),
+        
+        _MenuButton(text: game.t('start'), icon: Icons.play_arrow_rounded, onTap: () {
+            game.restartGame();
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => GameScreen()));
+          }),
+        SizedBox(height: 30),
+        _MenuButton(text: game.t('settings'), icon: Icons.settings_rounded, isOutlined: true, onTap: () { setState(() { isSettingsOpen = true; }); }),
+      ],
+    );
+  }
+
+  Widget _buildSettings(BuildContext context, GameProvider game) {
+    return Container(
+      width: 320, padding: EdgeInsets.all(25),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95), borderRadius: BorderRadius.circular(25),
+        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 20)],
+        border: Border.all(color: Colors.green.shade700, width: 3),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(game.t('settings'), style: TextStyle(color: Colors.green[900], fontSize: 22, letterSpacing: 2, fontWeight: FontWeight.bold)),
+          Divider(color: Colors.green[300], thickness: 2), SizedBox(height: 20),
+          Text(game.t('language'), style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
+          SizedBox(height: 10),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [_LangButton(game, 'TÜRKÇE', 'tr'), SizedBox(width: 15), _LangButton(game, 'ENGLISH', 'en')]),
+          SizedBox(height: 30),
+          IconButton(icon: Icon(Icons.check_circle_rounded, color: Colors.green.shade700, size: 60), onPressed: () { setState(() { isSettingsOpen = false; }); })
+        ],
+      ),
+    );
+  }
+
+  Widget _LangButton(GameProvider game, String label, String code) {
+    bool isSelected = game.languageCode == code;
+    return GestureDetector(
+      onTap: () => game.setLanguage(code),
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.green.shade700 : Colors.white,
+          border: Border.all(color: isSelected ? Colors.green.shade900 : Colors.green.shade300, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isSelected ? [BoxShadow(color: Colors.green.withOpacity(0.4), blurRadius: 8, offset: Offset(0, 4))] : []
+        ),
+        child: Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.green.shade700, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+}
+
+class _MenuButton extends StatelessWidget {
+  final String text; final VoidCallback onTap; final bool isOutlined; final IconData icon;
+  const _MenuButton({required this.text, required this.onTap, this.isOutlined = false, required this.icon});
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 250, padding: EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+        decoration: BoxDecoration(
+          color: isOutlined ? Colors.white.withOpacity(0.8) : Colors.green.shade700,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.green.shade900, width: 3),
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 6))],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isOutlined ? Colors.green.shade900 : Colors.white, size: 28),
+            SizedBox(width: 15),
+            Text(text, style: TextStyle(color: isOutlined ? Colors.green.shade900 : Colors.white, fontWeight: FontWeight.w900, fontSize: 20, letterSpacing: 1)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+//Game_Scren:
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import '../../logic/game_provider.dart';
+import '../../models/block_model.dart';
+import 'main_menu_screen.dart';
+
+class GameScreen extends StatefulWidget {
+  @override
+  _GameScreenState createState() => _GameScreenState();
+}
+
+class _GameScreenState extends State<GameScreen> {
+  final GlobalKey gridKey = GlobalKey();
+  BannerAd? _bannerAd;
+  bool _isAdLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBannerAd();
+  }
+
+  void _loadBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: 'ca-app-pub-3940256099942544/6300978111', 
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (_) => setState(() => _isAdLoaded = true),
+        onAdFailedToLoad: (ad, err) { ad.dispose(); },
+      ),
+    );
+    _bannerAd!.load();
+  }
+
+  @override
+  void dispose() { _bannerAd?.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Arka Plan
+          Positioned.fill(child: Image.asset('assets/images/bg_arid.png', fit: BoxFit.cover)),
+
+          SafeArea(
+            child: Column(
+              children: [
+                _buildTopBar(context),
+                Expanded(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Consumer<GameProvider>(
+                        builder: (context, game, child) => ShakeWidget(isShaking: game.isShaking, child: child!),
+                        child: DragTarget<BlockModel>(
+                          onMove: (d) => _handleDrag(context, d.offset, context.read<GameProvider>()),
+                          onLeave: (d) => context.read<GameProvider>().clearPreview(),
+                          onAcceptWithDetails: (d) {
+                            final g = context.read<GameProvider>();
+                            final coords = _calculateGridCoords(context, d.offset, g);
+                            if (coords != null) g.placeBlock(coords.dx.toInt(), coords.dy.toInt());
+                          },
+                          builder: (context, _, __) => Column(
+                            children: [
+                              _buildScoreBoard(), //
+                              _buildMissionText(),
+                              _buildGridArea(),
+                              _buildHandPanel(), //
+                            ],
+                          ),
+                        ),
+                      ),
+                      _buildTractor(), //
+                      _buildPopupText(),
+                      _buildGameOverOverlay(),
+                    ],
+                  ),
+                ),
+                if (_isAdLoaded) Container(height: 50, child: AdWidget(ad: _bannerAd!)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(icon: Icon(Icons.arrow_back, color: Colors.white, size: 32), onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainMenuScreen()))),
+        Consumer<GameProvider>(builder: (context, g, _) => Text(g.t('title'), style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 8, color: Colors.black)]))),
+        SizedBox(width: 48),
+      ],
+    );
+  }
+
+  Widget _buildScoreBoard() {
+    return Consumer<GameProvider>(
+      builder: (context, g, _) => Container(
+        width: 320, height: 110,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Image.asset('assets/images/ui_panel_score1.png', fit: BoxFit.contain),
+            Padding(
+              padding: const EdgeInsets.only(top: 15),
+              child: Text("${g.t('score')}: ${g.score}", style: TextStyle(color: Color(0xFF3E2723), fontSize: 28, fontWeight: FontWeight.w900)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMissionText() {
+    return Consumer<GameProvider>(builder: (context, g, _) => Container(
+      margin: EdgeInsets.symmetric(vertical: 5),
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white24)),
+      child: Text("${g.missionText} (${g.missionProgress}/${g.missionTarget})", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+    ));
+  }
+
+  Widget _buildGridArea() {
+    return Expanded(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Consumer<GameProvider>(
+            builder: (context, g, _) => AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                padding: EdgeInsets.all(2),
+                decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(12), border: Border.all(color: Color(0xFF3E2723), width: 3)),
+                child: GridView.builder(
+                  key: gridKey,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: 49,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, crossAxisSpacing: 1, mainAxisSpacing: 1),
+                  itemBuilder: (context, i) {
+                    int x = i ~/ 7; int y = i % 7;
+                    final cell = g.grid[x][y];
+                    bool isPreview = g.previewCells.contains("$x,$y");
+                    
+                    String img = 'assets/images/cell_empty_dry1.png'; //
+                    if (cell.isFilled) {
+                      if (cell.readyToHarvest) img = 'assets/images/cell_crop_ready1.png'; //
+                      else if (cell.isGrowing) img = 'assets/images/cell_crop_growing1.png'; //
+                      else img = 'assets/images/cell_filled_dry1.png'; //
+                    } else if (cell.isBurnedGap) img = 'assets/images/cell_water1.png'; //
+
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: isPreview ? Border.all(color: Colors.white, width: 3) : Border.all(color: Colors.black12, width: 0.5),
+                        boxShadow: isPreview ? [BoxShadow(color: Colors.white, blurRadius: 12, spreadRadius: 2)] : [],
+                      ),
+                      child: Opacity(opacity: isPreview ? 0.8 : 1.0, child: Image.asset(img, fit: BoxFit.cover)),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 🔥 GÜNCELLENMİŞ SLOT SİSTEMİ (GERİ BIRAKMA ÖZELLİĞİ İLE)
+  Widget _buildHandPanel() {
+    return Container(
+      height: 140,
+      margin: EdgeInsets.only(bottom: 10),
+      child: Consumer<GameProvider>(
+        builder: (context, g, _) => Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(3, (i) {
+            
+            // Eğer bu slot sürükleniyorsa, onu "Geri Bırakma Hedefi" yap
+            if (g.draggingIndex == i) {
+              return DragTarget<BlockModel>(
+                onWillAccept: (_) => true,
+                onAccept: (_) => g.cancelDragging(), // Bloğu geri al
+                builder: (context, candidates, rejects) {
+                  // Sürüklenirken slotu büyüt ve vurgula
+                  return Transform.scale(
+                    scale: 1.2, // %20 Büyüme
+                    child: Container(
+                      width: 110, height: 110,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(image: AssetImage('assets/images/ui_panel_slot1.png')), //
+                        boxShadow: [BoxShadow(color: Colors.yellowAccent.withOpacity(0.5), blurRadius: 20, spreadRadius: 2)]
+                      ),
+                      child: Icon(Icons.keyboard_return, color: Colors.white54, size: 40), // Geri dönüş ikonu
+                    ),
+                  );
+                },
+              );
+            }
+
+            // Normal Durum
+            return Container(
+              width: 110, height: 110,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Image.asset('assets/images/ui_panel_slot1.png', fit: BoxFit.contain), 
+                  if (g.hand[i] != null) Center(
+                    child: Draggable<BlockModel>(
+                      data: g.hand[i],
+                      onDragStarted: () => g.startDragging(i),
+                      feedback: _buildBlockShape(g.hand[i]!, 35, true), 
+                      // childWhenDragging BURADA GİZLENİYOR ki alttaki DragTarget görünsün
+                      childWhenDragging: SizedBox(), 
+                      onDragEnd: (_) => g.clearPreview(),
+                      child: _buildBlockShape(g.hand[i]!, 26, false), 
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlockShape(BlockModel b, double u, bool isFeedback) {
+    return Container(
+      width: b.width * u, height: b.height * u,
+      child: Stack(
+        children: b.shape.map((p) => Positioned(
+          left: p[1] * u, top: p[0] * u,
+          child: Container(
+            width: u - 1, height: u - 1, 
+            decoration: BoxDecoration(border: Border.all(color: Colors.white.withOpacity(0.4), width: 1)),
+            child: Image.asset('assets/images/cell_filled_dry1.png', fit: BoxFit.cover), //
+          ),
+        )).toList(),
+      ),
+    );
+  }
+
+  Widget _buildTractor() {
+    return Consumer<GameProvider>(
+      builder: (context, g, _) {
+        final w = MediaQuery.of(context).size.width;
+        return AnimatedPositioned(
+          duration: Duration(milliseconds: 1500), curve: Curves.easeInOut,
+          left: g.isHarvesting ? w : -300, top: MediaQuery.of(context).size.height * 0.38,
+          child: Image.asset('assets/images/icon_tractor1.png', width: 250), //
+        );
+      },
+    );
+  }
+
+  Widget _buildPopupText() {
+    return Consumer<GameProvider>(builder: (context, g, _) => AnimatedPositioned(
+      duration: Duration(milliseconds: 800), curve: Curves.elasticOut,
+      top: g.showPopup ? 180 : -100,
+      child: AnimatedOpacity(duration: Duration(milliseconds: 300), opacity: g.showPopup ? 1 : 0, child: Text(g.popupText ?? "", style: TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: Colors.orangeAccent, shadows: [Shadow(color: Colors.black, blurRadius: 15)]))),
+    ));
+  }
+
+  Widget _buildGameOverOverlay() {
+    return Consumer<GameProvider>(builder: (context, g, _) => !g.isGameOver ? SizedBox() : Container(color: Colors.black87, width: double.infinity, height: double.infinity, child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text(g.t('game_over'), style: TextStyle(color: Colors.red, fontSize: 36, fontWeight: FontWeight.bold)), SizedBox(height: 30), ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15)), onPressed: () => g.restartGame(), child: Text(g.t('reboot'), style: TextStyle(fontSize: 20, color: Colors.white)))]))));
+  }
+
+  void _handleDrag(BuildContext context, Offset pos, GameProvider g) {
+    final coords = _calculateGridCoords(context, pos, g);
+    if (coords != null) g.setPreview(coords.dx.toInt(), coords.dy.toInt());
+  }
+
+  Offset? _calculateGridCoords(BuildContext context, Offset pos, GameProvider g) {
+    if (g.draggingIndex == null || g.hand[g.draggingIndex!] == null) return null;
+    final RenderBox? box = gridKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return null;
+    final gridPos = box.localToGlobal(Offset.zero);
+    double fx = pos.dx - gridPos.dx; double fy = pos.dy - gridPos.dy - 70; 
+    double cs = (box.size.width - 4) / 7; 
+    Offset? best; double minD = cs * 2.0;
+    for (int r = 0; r < 7; r++) {
+      for (int c = 0; c < 7; c++) {
+        if (g.canPlaceAt(r, c)) {
+          double bx = (c * cs) + ((g.hand[g.draggingIndex!]!.width * cs) / 2);
+          double by = (r * cs) + ((g.hand[g.draggingIndex!]!.height * cs) / 2);
+          double d = sqrt(pow(fx - bx, 2) + pow(fy - by, 2));
+          if (d < minD) { minD = d; best = Offset(r.toDouble(), c.toDouble()); }
+        }
+      }
+    }
+    return best;
+  }
+}
+
+class ShakeWidget extends StatefulWidget {
+  final bool isShaking; final Widget child;
+  const ShakeWidget({required this.isShaking, required this.child});
+  @override _ShakeWidgetState createState() => _ShakeWidgetState();
+}
+class _ShakeWidgetState extends State<ShakeWidget> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  @override void initState() { super.initState(); _ctrl = AnimationController(vsync: this, duration: Duration(milliseconds: 50)); }
+  @override void didUpdateWidget(covariant ShakeWidget old) { if (widget.isShaking) _ctrl.repeat(reverse: true); else _ctrl.stop(); super.didUpdateWidget(old); }
+  @override void dispose() { _ctrl.dispose(); super.dispose(); }
+  @override Widget build(BuildContext context) {
+    return AnimatedBuilder(animation: _ctrl, builder: (c, child) => Transform.translate(offset: widget.isShaking ? Offset(Random().nextDouble()*8, Random().nextDouble()*8) : Offset.zero, child: widget.child));
+  }
+}
+
+//Game_provider:
+import 'dart:async';
+import 'dart:collection';
+import 'dart:math';
+import 'package:flutter/material.dart';
+import '../models/cell.dart';
+import '../models/block_model.dart';
+import '../localization.dart';
+
+enum MissionType { square2x2, line3, cornerL, any5 }
+
+class GameProvider extends ChangeNotifier {
+  static const int gridSize = 7;
+  List<List<Cell>> grid = [];
+  List<BlockModel?> hand = [null, null, null]; 
+  int? draggingIndex; 
+
+  List<String> previewCells = [];
+  double gapBarProgress = 0.0;
+  bool isGameOver = false;
+  int score = 0;
+
+  String languageCode = 'tr'; 
+  bool isShaking = false;
+  String? popupText;
+  bool showPopup = false;
+  bool isHarvesting = false; 
+
+  MissionType currentMission = MissionType.square2x2;
+  int missionTarget = 1;
+  int missionProgress = 0;
+
+  GameProvider() {
+    _initializeGrid();
+    _generateNewMission();
+    _refillHand(); 
+  }
+
+  String t(String key) => AppStrings.dictionary[languageCode]?[key] ?? key;
+  void setLanguage(String code) { languageCode = code; notifyListeners(); }
+
+  String get missionText {
+    switch (currentMission) {
+      case MissionType.square2x2: return t('mission_sq');
+      case MissionType.line3: return t('mission_ln');
+      case MissionType.cornerL: return t('mission_cr');
+      case MissionType.any5: return t('mission_bg');
+    }
+  }
+
+  void _initializeGrid() {
+    grid = List.generate(gridSize, (x) => List.generate(gridSize, (y) => Cell(x: x, y: y)));
+  }
+
+  void restartGame() {
+    isGameOver = false; gapBarProgress = 0.0; score = 0;
+    popupText = null; showPopup = false; isHarvesting = false;
+    _initializeGrid(); _generateNewMission(); _refillHand();
+    notifyListeners();
+  }
+
+  void _refillHand() {
+    for (int i = 0; i < 3; i++) hand[i] = _generateDifficultyBasedBlock();
+    _checkGameOver();
+    notifyListeners();
+  }
+
+  BlockModel _generateDifficultyBasedBlock() {
+    final allBlocks = BlockModel.getAllBlocks();
+    int emptyCells = 0;
+    for (var row in grid) for (var c in row) if (!c.isFilled) emptyCells++;
+
+    List<BlockModel> bag;
+    if (emptyCells < 15) {
+      bag = allBlocks.where((b) => b.difficulty == 1).toList();
+    } else {
+      bag = allBlocks.where((b) => b.difficulty <= 2).toList();
+    }
+    return bag[Random().nextInt(bag.length)];
+  }
+
+  void _checkGameOver() {
+    bool canMove = false;
+    for (var block in hand) {
+      if (block != null && _canPlaceBlockAnywhere(block)) { canMove = true; break; }
+    }
+    if (!canMove) isGameOver = true;
+  }
+
+  void startDragging(int index) { draggingIndex = index; notifyListeners(); }
+  
+  // 🔥 YENİ: Sürüklemeyi İptal Et (Bloğu geri bırak)
+  void cancelDragging() {
+    draggingIndex = null;
+    clearPreview();
+    notifyListeners();
+  }
+
+  bool canPlaceAt(int r, int c) {
+    if (draggingIndex == null || hand[draggingIndex!] == null) return false;
+    return _checkFit(r, c, hand[draggingIndex!]!);
+  }
+  
+  bool _isValid(int x, int y) => x >= 0 && x < gridSize && y >= 0 && y < gridSize;
+
+  bool _canPlaceBlockAnywhere(BlockModel block) {
+    for (int x = 0; x < gridSize; x++) {
+      for (int y = 0; y < gridSize; y++) if (_checkFit(x, y, block)) return true;
+    }
+    return false;
+  }
+  
+  bool _checkFit(int startX, int startY, BlockModel block) {
+    for (var point in block.shape) {
+      int tx = startX + point[0]; int ty = startY + point[1];
+      if (!_isValid(tx, ty) || grid[tx][ty].isFilled) return false;
+    }
+    return true;
+  }
+
+  void setPreview(int x, int y) {
+    if (draggingIndex == null || hand[draggingIndex!] == null || isGameOver) return;
+    List<String> temp = []; bool canPlace = true;
+    for (var p in hand[draggingIndex!]!.shape) {
+      int tx = x + p[0]; int ty = y + p[1];
+      if (!_isValid(tx, ty) || grid[tx][ty].isFilled) { canPlace = false; break; }
+      temp.add("$tx,$ty");
+    }
+    previewCells = canPlace ? temp : [];
+    notifyListeners();
+  }
+
+  void clearPreview() { previewCells.clear(); notifyListeners(); }
+
+  bool placeBlock(int r, int c) {
+    if (previewCells.isEmpty || isGameOver || draggingIndex == null) return false;
+    for (var coord in previewCells) {
+      var parts = coord.split(','); 
+      int px = int.parse(parts[0]); int py = int.parse(parts[1]);
+      grid[px][py].isFilled = true;
+      grid[px][py].isGrowing = false; 
+      grid[px][py].readyToHarvest = false;
+      grid[px][py].growthTimer = 0;
+    }
+    hand[draggingIndex!] = null; draggingIndex = null; clearPreview();
+    _processFarmLogic();
+    if (hand.every((e) => e == null)) _refillHand(); else _checkGameOver();
+    return true;
+  }
+
+  void _processFarmLogic() {
+    for (var row in grid) for (var cell in row) cell.isBurnedGap = false; 
+
+    Set<String> visited = {};
+    List<Cell> waterCells = [];
+    bool hasReadyCrop = false;
+
+    // BOŞLUKLARI TARA (Maks 6 birim)
+    for (int x = 0; x < gridSize; x++) {
+      for (int y = 0; y < gridSize; y++) {
+        if (!grid[x][y].isFilled && !visited.contains("$x,$y")) {
+          List<Cell> group = [];
+          Queue<Cell> q = Queue(); q.add(grid[x][y]); visited.add("$x,$y");
+          while (q.isNotEmpty) {
+            Cell current = q.removeFirst(); group.add(current);
+            for (var d in [[0,1],[0,-1],[1,0],[-1,0]]) {
+              int nx = current.x + d[0]; int ny = current.y + d[1];
+              if (_isValid(nx, ny) && !grid[nx][ny].isFilled && !visited.contains("$nx,$ny")) {
+                visited.add("$nx,$ny"); q.add(grid[nx][ny]);
+              }
+            }
+          }
+          if (group.isNotEmpty && group.length <= 6) {
+            for (var c in group) { c.isBurnedGap = true; waterCells.add(c); }
+            _checkMissions(group.length);
+          }
+        }
+      }
+    }
+
+    // BÜYÜME SİKLÜSÜ
+    for (var water in waterCells) {
+      for (var d in [[0,1],[0,-1],[1,0],[-1,0]]) {
+        int nx = water.x + d[0]; int ny = water.y + d[1];
+        if (_isValid(nx, ny) && grid[nx][ny].isFilled) {
+          Cell crop = grid[nx][ny];
+          if (!crop.isGrowing) crop.isGrowing = true; 
+          else if (!crop.readyToHarvest) {
+            crop.growthTimer++;
+            if (crop.growthTimer >= 2) { crop.readyToHarvest = true; hasReadyCrop = true; }
+          }
+        }
+      }
+    }
+    if (hasReadyCrop) _triggerHarvestTractor();
+    notifyListeners();
+  }
+
+  void _triggerHarvestTractor() {
+    isHarvesting = true; score += 500; _triggerJuiceEffects(t('pop_sweet'));
+    Timer(const Duration(milliseconds: 1000), () {
+      for (var row in grid) for (var cell in row) if (cell.readyToHarvest) {
+        cell.isFilled = false; cell.isGrowing = false; cell.readyToHarvest = false; cell.growthTimer = 0;
+      }
+      isHarvesting = false; _processFarmLogic(); notifyListeners();
+    });
+  }
+
+  void _checkMissions(int size) {
+    bool match = false;
+    if (currentMission == MissionType.line3 && size >= 3) match = true;
+    else if (currentMission == MissionType.cornerL && size >= 3) match = true;
+    else if (currentMission == MissionType.square2x2 && size >= 4) match = true;
+    else if (currentMission == MissionType.any5 && size >= 5) match = true;
+    
+    if (match) {
+      missionProgress++;
+      if (missionProgress >= missionTarget) { 
+        _generateNewMission(); 
+        score += 1000; 
+        gapBarProgress = (gapBarProgress + 0.3).clamp(0.0, 1.0);
+        _triggerJuiceEffects(t('pop_divine')); // Görev bittiğinde efekt
+      }
+    }
+  }
+
+  void _triggerJuiceEffects(String text) {
+    isShaking = true; showPopup = true; popupText = text;
+    Timer(const Duration(milliseconds: 500), () { isShaking = false; notifyListeners(); });
+    Timer(const Duration(milliseconds: 2000), () { showPopup = false; notifyListeners(); });
+  }
+
+  void _generateNewMission() { currentMission = MissionType.values[Random().nextInt(4)]; missionProgress = 0; }
+}
+
+//Cell:
+class Cell {
+  final int x;
+  final int y;
+  bool isFilled;
+  bool isBurnedGap; // Suyun dolduğu yer
+  bool isGrowing;   // Suya komşu olup yeşeren
+  bool readyToHarvest; // Hasat vakti gelmiş buğday
+  int growthTimer;  // 🔥 Büyümeyi sayan sayaç
+
+  Cell({
+    required this.x,
+    required this.y,
+    this.isFilled = false,
+    this.isBurnedGap = false,
+    this.isGrowing = false,
+    this.readyToHarvest = false,
+    this.growthTimer = 0,
+  });
+}
+
+//block_model:
+class BlockModel {
+  final List<List<int>> shape; 
+  final String id;
+  final int difficulty; // 1: Kolay, 2: Orta, 3: Zor
+
+  BlockModel({
+    required this.shape, 
+    required this.id, 
+    this.difficulty = 1
+  });
+
+  int get width {
+    int maxY = shape.map((p) => p[1]).reduce((a, b) => a > b ? a : b);
+    return maxY + 1;
+  }
+
+  int get height {
+    int maxX = shape.map((p) => p[0]).reduce((a, b) => a > b ? a : b);
+    return maxX + 1;
+  }
+
+  static List<BlockModel> getAllBlocks() {
+    return [
+      // --- KOLAY (Kurtarıcılar) ---
+      BlockModel(id: "dot", shape: [[0, 0]], difficulty: 1),
+      BlockModel(id: "mini_h", shape: [[0, 0], [0, 1]], difficulty: 1),
+      BlockModel(id: "mini_v", shape: [[0, 0], [1, 0]], difficulty: 1),
+      BlockModel(id: "corner_small", shape: [[0, 0], [0, 1], [1, 0]], difficulty: 1), // Küçük Köşe
+
+      // --- ORTA (Klasikler ve Döndürülmüş Halleri) ---
+      // Kare
+      BlockModel(id: "square", shape: [[0, 0], [0, 1], [1, 0], [1, 1]], difficulty: 2),
+      
+      // Çubuklar
+      BlockModel(id: "line_3h", shape: [[0, 0], [0, 1], [0, 2]], difficulty: 2),
+      BlockModel(id: "line_3v", shape: [[0, 0], [1, 0], [2, 0]], difficulty: 2),
+
+      // L Şekli ve Döndürülmüşleri
+      BlockModel(id: "L_norm", shape: [[0, 0], [1, 0], [2, 0], [2, 1]], difficulty: 2), // Normal L
+      BlockModel(id: "L_rot90", shape: [[0, 0], [0, 1], [0, 2], [1, 0]], difficulty: 2), // Yatık L
+      BlockModel(id: "L_rot180", shape: [[0, 0], [0, 1], [1, 1], [2, 1]], difficulty: 2), // Ters L
+      BlockModel(id: "L_rot270", shape: [[1, 0], [1, 1], [1, 2], [0, 2]], difficulty: 2), // Ters Yatık L
+
+      // J Şekli (L'nin aynası)
+      BlockModel(id: "J_norm", shape: [[0, 1], [1, 1], [2, 1], [2, 0]], difficulty: 2),
+
+      // T Şekli ve Döndürülmüşleri
+      BlockModel(id: "T_norm", shape: [[0, 1], [1, 0], [1, 1], [1, 2]], difficulty: 2),
+      BlockModel(id: "T_rot90", shape: [[0, 0], [1, 0], [2, 0], [1, 1]], difficulty: 2),
+      BlockModel(id: "T_rot180", shape: [[0, 0], [0, 1], [0, 2], [1, 1]], difficulty: 2),
+      BlockModel(id: "T_rot270", shape: [[1, 0], [0, 1], [1, 1], [2, 1]], difficulty: 2),
+
+      // --- ZOR (Karmaşık Şekiller) ---
+      BlockModel(id: "line_4h", shape: [[0, 0], [0, 1], [0, 2], [0, 3]], difficulty: 3),
+      BlockModel(id: "Z_norm", shape: [[0, 0], [0, 1], [1, 1], [1, 2]], difficulty: 3),
+      BlockModel(id: "S_norm", shape: [[0, 1], [0, 2], [1, 0], [1, 1]], difficulty: 3),
+      BlockModel(id: "U_shape", shape: [[0, 0], [0, 2], [1, 0], [1, 1], [1, 2]], difficulty: 3),
+      BlockModel(id: "Plus", shape: [[0, 1], [1, 0], [1, 1], [1, 2], [2, 1]], difficulty: 3), // Artı Şekli
+    ];
+  }
+}
+
+//main:
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart'; // Reklam Kütüphanesi
+import 'logic/game_provider.dart';
+import 'ui/screens/main_menu_screen.dart';
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize(); // 🔥 REKLAMLARI BAŞLAT
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => GameProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Tiny Farm',
+      // Temayı Çiftlik renklerine çekiyoruz (Yeşil/Kahverengi)
+      theme: ThemeData(
+        primarySwatch: Colors.green,
+        scaffoldBackgroundColor: const Color(0xFFE8F5E9), // Açık Yeşil Arka Plan
+        fontFamily: 'Roboto', // Varsa tatlı bir font eklersin sonra
+      ),
+      home: MainMenuScreen(), 
+    );
+  }
+}
+
+//localization:
+class AppStrings {
+  static const Map<String, Map<String, String>> dictionary = {
+    // 🇹🇷 TÜRKÇE (Çiftlik Teması)
+    'tr': {
+      // Menü
+      'title': 'MİNİK ÇİFTLİK',
+      'start': 'EKİME BAŞLA',
+      'settings': 'AYARLAR',
+      'language': 'DİL / LANGUAGE',
+      'sfx': 'DOĞA SESLERİ',
+      'music': 'MÜZİK',
+      'back': 'GERİ',
+      
+      // Oyun İçi
+      'score': 'HASAT',
+      'next': 'SIRADAKİ',
+      'drag': 'EK',
+      'game_over': 'TARLA DOLDU!',
+      'reboot': 'YENİ TARLA',
+      
+      // Görevler (Mekanik aynı, hikaye farklı)
+      'mission_sq': '2x2 BAHÇE YAP',
+      'mission_ln': 'UZUN ÇİT YAP (3+)',
+      'mission_cr': 'KÖŞE EKİMİ YAP (L)',
+      'mission_bg': 'BÜYÜK TARLA YAP (5+)',
+      
+      // Pop-up Sözler
+      'pop_sweet': 'LEZZETLİ!',
+      'pop_divine': 'BEREKETLİ!',
+      'pop_void': 'HASAT ZAMANI!',
+      'pop_cool': 'TAZE!',
+      'pop_boom': 'TOPLA!',
+    },
+
+    // 🇺🇸 ENGLISH (Farm Theme)
+    'en': {
+      // Menu
+      'title': 'TINY FARM',
+      'start': 'START FARMING',
+      'settings': 'SETTINGS',
+      'language': 'LANGUAGE',
+      'sfx': 'NATURE SOUNDS',
+      'music': 'MUSIC',
+      'back': 'BACK',
+      
+      // In-Game
+      'score': 'HARVEST',
+      'next': 'NEXT',
+      'drag': 'PLANT',
+      'game_over': 'FIELD FULL!',
+      'reboot': 'NEW FIELD',
+      
+      // Missions
+      'mission_sq': 'MAKE 2x2 GARDEN',
+      'mission_ln': 'MAKE LONG FENCE (3+)',
+      'mission_cr': 'MAKE CORNER PLOT',
+      'mission_bg': 'MAKE BIG FIELD (5+)',
+      
+      // Pop-ups
+      'pop_sweet': 'TASTY!',
+      'pop_divine': 'BOUNTIFUL!',
+      'pop_void': 'BIG HARVEST!',
+      'pop_cool': 'FRESH!',
+      'pop_boom': 'CROP!',
+    }
+  };
+}
