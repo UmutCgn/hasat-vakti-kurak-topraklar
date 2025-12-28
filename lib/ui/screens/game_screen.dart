@@ -211,11 +211,16 @@ class _GameScreenState extends State<GameScreen> {
             aspectRatio: 1,
             child: Container(
               margin: EdgeInsets.all(10),
+              // Arka plana hafif bir panel ekleyelim ki grid havada durmasın
+              padding: EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: Colors.brown[300]!.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: GridView.builder(
                 key: gridKey,
                 physics: NeverScrollableScrollPhysics(),
                 itemCount: 49,
-                // 🔥 DÜZELTME: Boşluklar arttırıldı (1 -> 3)
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 7,
                   crossAxisSpacing: 3,
@@ -225,20 +230,32 @@ class _GameScreenState extends State<GameScreen> {
                   int x = i ~/ 7, y = i % 7;
                   var cell = g.grid[x][y];
                   bool prev = g.previewCells.contains("$x,$y");
-                  String img = 'assets/images/cell_empty_dry1.png'; //
+
+                  String img = 'assets/images/cell_empty_dry1.png';
                   if (cell.isFilled) {
                     if (cell.readyToHarvest)
-                      img = 'assets/images/cell_crop_ready1.png'; //
+                      img = 'assets/images/cell_crop_ready1.png';
                     else if (cell.isGrowing)
-                      img = 'assets/images/cell_crop_growing1.png'; //
+                      img = 'assets/images/cell_crop_growing1.png';
                     else
-                      img =
-                          'assets/images/cell_filled_dry1.png'; // İsim düzeltildi
-                  } else if (cell.isBurnedGap)
-                    img = 'assets/images/cell_water1.png'; //
-                  return Opacity(
-                    opacity: prev ? 0.6 : 1,
-                    child: Image.asset(img, fit: BoxFit.cover),
+                      img = 'assets/images/cell_filled_dry1.png';
+                  } else if (cell.isBurnedGap) {
+                    img = 'assets/images/cell_water1.png';
+                  }
+
+                  return Container(
+                    decoration: BoxDecoration(
+                      // 🔥 ÖNİZLEME: Eğer buraya blok gelecekse yeşil çerçeve yak!
+                      border: prev
+                          ? Border.all(color: Colors.greenAccent, width: 3)
+                          : null,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Opacity(
+                      // Önizleme ise hafif şeffaf olsun ama çerçeve net kalsın
+                      opacity: prev ? 0.7 : 1,
+                      child: Image.asset(img, fit: BoxFit.cover),
+                    ),
                   );
                 },
               ),
@@ -251,61 +268,133 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildHandPanel() {
     return Container(
-      height: 130,
+      height: 140, // Yükseklik biraz arttı rahat sığsın
+      padding: EdgeInsets.only(bottom: 10),
       child: Consumer<GameProvider>(
         builder: (c, g, _) => Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(
-            3,
-            (i) => DragTarget<BlockModel>(
+          children: List.generate(3, (i) {
+            bool isActive = g.draggingIndex == i; // Bu slot mu sürükleniyor?
+            return DragTarget<BlockModel>(
               onAccept: (_) => g.cancelDrag(),
-              builder: (c, _, __) => Container(
-                width: 100,
-                height: 100,
+              builder: (c, _, __) => AnimatedContainer(
+                duration: Duration(milliseconds: 200),
+                width: isActive ? 110 : 100, // Aktifse büyür
+                height: isActive ? 110 : 100,
+                transform: isActive
+                    ? Matrix4.diagonal3Values(1.1, 1.1, 1)
+                    : Matrix4.identity(),
                 decoration: BoxDecoration(
                   image: DecorationImage(
                     image: AssetImage('assets/images/ui_panel_slot1.png'),
+                    fit: BoxFit.fill,
                   ),
-                ), //
-                child: g.hand[i] != null
-                    ? Draggable<BlockModel>(
-                        data: g.hand[i],
-                        onDragStarted: () => g.startDrag(i),
-                        onDragEnd: (_) => g.clearPreview(),
-                        feedback: _block(g.hand[i]!, 30),
-                        child: g.draggingIndex == i
-                            ? SizedBox()
-                            : _block(g.hand[i]!, 20),
-                      )
-                    : null,
+                  // 🔥 EFEKT: Aktifse sarı ışık saç (Glow)
+                  boxShadow: isActive
+                      ? [
+                          BoxShadow(
+                            color: Colors.amberAccent.withOpacity(0.8),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Center(
+                  // 🔥 HİZALAMA: Bloğu tam ortaya koyar
+                  child: g.hand[i] != null
+                      ? Draggable<BlockModel>(
+                          data: g.hand[i],
+                          onDragStarted: () => g.startDrag(i),
+                          onDragEnd: (_) => g.clearPreview(),
+                          // 🔥 GÖRÜNTÜ: Sürüklerken sınırları belirgin (border: true)
+                          feedback: Material(
+                            color: Colors.transparent,
+                            child: _block(
+                              g.hand[i]!,
+                              35,
+                              border: true,
+                              isFeedback: true,
+                            ),
+                          ),
+                          // Slotun içindeki duruş (Daha toplu durması için scale ayarlı)
+                          child: g.draggingIndex == i
+                              ? SizedBox() // Sürüklenirken slot boş kalsın (veya silik görünsün)
+                              : FittedBox(
+                                  fit: BoxFit.contain,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(15.0),
+                                    child: _block(g.hand[i]!, 25),
+                                  ),
+                                ),
+                        )
+                      : null,
+                ),
               ),
-            ),
-          ),
+            );
+          }),
         ),
       ),
     );
   }
 
-  Widget _block(BlockModel b, double s) => Container(
-    width: b.width * s,
-    height: b.height * s,
-    child: Stack(
-      children: b.shape
-          .map(
-            (p) => Positioned(
-              left: p[1] * s,
-              top: p[0] * s,
-              child: Image.asset(
-                'assets/images/cell_filled_dry1.png',
-                width: s,
-                height: s,
-                fit: BoxFit.cover,
+  // 🔥 GÜNCELLEME: Sınırları belirginleştiren parametreler eklendi
+  Widget _block(
+    BlockModel b,
+    double s, {
+    bool border = false,
+    bool isFeedback = false,
+  }) {
+    // Toplam genişlik/yükseklik hesapla ki ortalayabilelim
+    double w = b.width * s;
+    double h = b.height * s;
+
+    return Container(
+      width: w,
+      height: h,
+      child: Stack(
+        children: b.shape.map((p) {
+          return Positioned(
+            left: p[1] * s,
+            top: p[0] * s,
+            child: Container(
+              width: s,
+              height: s,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/cell_filled_dry1.png'),
+                  fit: BoxFit.cover,
+                  // Feedback ise biraz şeffaflaştır
+                  colorFilter: isFeedback
+                      ? ColorFilter.mode(
+                          Colors.white.withOpacity(0.9),
+                          BlendMode.modulate,
+                        )
+                      : null,
+                ),
+                // 🔥 SINIRLAR: Eğer border true ise her karenin etrafına çizgi çek
+                border: border
+                    ? Border.all(color: Colors.white, width: 2)
+                    : Border.all(
+                        color: Colors.black12,
+                        width: 0.5,
+                      ), // Hafif kontür
+                boxShadow: isFeedback
+                    ? [
+                        BoxShadow(
+                          color: Colors.black45,
+                          blurRadius: 5,
+                          offset: Offset(2, 2),
+                        ),
+                      ]
+                    : [],
               ),
             ),
-          )
-          .toList(),
-    ),
-  );
+          );
+        }).toList(),
+      ),
+    );
+  }
 
   Widget _buildTractor() {
     return Consumer<GameProvider>(
